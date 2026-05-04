@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -22,24 +21,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.lankiemusicplayer.model.Song
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
-import androidx.compose.material.icons.filled.QueueMusic
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
+import com.google.common.collect.Multimaps.index
 
 @Composable
 fun SongList(
     songs: List<Song>,
+    isCollaborationSong: (Song) -> Boolean = { false }, // 👈 ADD THIS
     modifier: Modifier = Modifier,
     trailingText: (Song, Int) -> String? = { _, _ -> null },
     currentPlayingUri: String? = null,
@@ -53,26 +50,30 @@ fun SongList(
     onNavigateToAllSongs: (Song) -> Unit,
 ) {
 
+   /* var selectedSongForPlaylist by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }*/
+    var selectedSongForPlaylist by remember { mutableStateOf<Song?>(null) }
+    var selectedSongForDelete by remember { mutableStateOf<Song?>(null) }
 
 
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+
     ) {
 
-        itemsIndexed(
-            songs,
-            key = { _, it -> it.uri.toString() },
-            contentType = { _, _ -> "song" }
-        ) { index, song ->
+
+            itemsIndexed(
+                items = songs,
+                key = { _, it -> it.id }, // 🔥 MUCH faster than uri string
+                contentType = { _, _ -> "song" }
+            ) { index, song ->
 
             val isSelected = song.uri.toString() == currentPlayingUri
             val context = LocalContext.current
-
-            var showPlaylistDialog by remember { mutableStateOf(false) }
-            var showDeleteDialog by remember { mutableStateOf(false) }
-            val haptic = LocalHapticFeedback.current
+                val isCollaboration = isCollaborationSong(song)
+                val haptic = LocalHapticFeedback.current
 
             /*val dismissState = rememberSwipeToDismissBoxState(
                 confirmValueChange = {
@@ -83,7 +84,7 @@ fun SongList(
                             HapticFeedbackType.LongPress
                         )
 
-                        showPlaylistDialog = true
+                        selectedSongForPlaylist = true
                     }
 
                     false
@@ -187,13 +188,20 @@ fun SongList(
                         },
 
 
-                    colors = ListItemDefaults.colors(
-                        containerColor =
-                            if (isSelected)
+
+                colors = ListItemDefaults.colors(
+                    containerColor =
+                        when {
+                            isSelected ->
                                 MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                            else
+
+                            isCollaboration ->
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f) // 👈 LIGHT GREY
+
+                            else ->
                                 Color.Transparent
-                    )
+                        }
+                )
                 )
             }
 
@@ -203,12 +211,12 @@ fun SongList(
                     when (value) {
 
                         SwipeToDismissBoxValue.StartToEnd -> {
-                            showPlaylistDialog = true
+                            selectedSongForPlaylist = song
                         }
 
                         SwipeToDismissBoxValue.EndToStart -> {
                             if (enableSwipeToRemove) {
-                                viewModel.removeFromQueue(song)
+                                selectedSongForDelete = song
                             }
                         }
 
@@ -266,97 +274,86 @@ fun SongList(
 
             }
 
-            if (showPlaylistDialog) {
 
-                val playlists = viewModel.getPlaylists()
-
-                AlertDialog(
-                    onDismissRequest = { showPlaylistDialog = false },
-                    title = { Text("Add to Playlist") },
-                    text = {
-
-                        Column {
-
-                            playlists.forEach { playlist ->
-
-                                TextButton(
-                                    onClick = {
-
-                                        viewModel.addSongToPlaylist(
-                                            playlist.id,
-                                            song
-                                        )
-
-                                        Toast.makeText(
-                                            context,
-                                            "Added to ${playlist.name}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-
-                                        showPlaylistDialog = false
-                                    }
-                                ) {
-                                    Text(playlist.name)
-                                }
-
-                            }
-
-                        }
-
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = { showPlaylistDialog = false }
-                        ) {
-                            Text("Cancel")
-                        }
-                    }
-                )
-            }
-
-            if (showDeleteDialog) {
-
-                AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    title = { Text("Delete song") },
-                    text = { Text("Delete this song from your device?") },
-
-                    confirmButton = {
-
-                        TextButton(
-                            onClick = {
-
-                                context.contentResolver.delete(song.uri, null, null)
-
-                                Toast.makeText(
-                                    context,
-                                    "Song deleted",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-
-                                showDeleteDialog = false
-                            }
-                        ) {
-                            Text("Delete")
-                        }
-
-                    },
-
-                    dismissButton = {
-
-                        TextButton(
-                            onClick = { showDeleteDialog = false }
-                        ) {
-                            Text("Cancel")
-                        }
-
-                    }
-                )
-            }
         }
 
     }
 
+    selectedSongForPlaylist?.let { song ->
 
+        val context = LocalContext.current
+        val playlists = viewModel.getPlaylists()
+
+        AlertDialog(
+            onDismissRequest = { selectedSongForPlaylist = null },
+            title = { Text("Add to Playlist") },
+            text = {
+                Column {
+                    playlists.forEach { playlist ->
+                        TextButton(
+                            onClick = {
+                                viewModel.addSongToPlaylist(playlist.id, song)
+
+                                Toast.makeText(
+                                    context,
+                                    "Added to ${playlist.name}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+
+                                selectedSongForPlaylist = null
+                            }
+                        ) {
+                            Text(playlist.name)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { selectedSongForPlaylist = null }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    selectedSongForDelete?.let { song ->
+
+        val context = LocalContext.current
+
+        AlertDialog(
+            onDismissRequest = { selectedSongForDelete = null },
+            title = { Text("Delete song") },
+            text = { Text("Delete this song from your device?") },
+
+            confirmButton = {
+                TextButton(
+                    onClick = {
+
+                        context.contentResolver.delete(song.uri, null, null)
+
+                        Toast.makeText(
+                            context,
+                            "Song deleted",
+                            Toast.LENGTH_SHORT
+                        ).show()
+
+                        selectedSongForDelete = null
+                    }
+                ) {
+                    Text("Delete")
+                }
+            },
+
+            dismissButton = {
+                TextButton(
+                    onClick = { selectedSongForDelete = null }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
 }

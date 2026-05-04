@@ -36,6 +36,8 @@ import kotlinx.coroutines.withContext
 import androidx.navigation.NavController
 import com.example.lankiemusicplayer.components.AllSongsButton
 import androidx.compose.material.icons.filled.Refresh
+import com.example.lankiemusicplayer.components.FabMode
+import com.example.lankiemusicplayer.components.SharedFab
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -52,28 +54,30 @@ fun HomeScreen(
 
 
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(songs.isEmpty()) {
+        if (songs.isEmpty()) {
 
-        val loadedSongs = withContext(Dispatchers.IO) {
-            MusicScanner.getSongs(context)
+            val loadedSongs = withContext(Dispatchers.IO) {
+                MusicScanner.getSongs(context)
+            }
+
+            songs = loadedSongs
+
+            Log.d("LankieMusic", "Total songs found: ${songs.size}")
         }
-
-        songs = loadedSongs
-
-        playerViewModel.loadSongs(context)
-
-        Log.d("LankieMusic", "Total songs found: ${songs.size}")
     }
 
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+
     ) {
 
         Column(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
 
             Column(
@@ -171,39 +175,17 @@ fun HomeScreen(
             }
         }
 
-        FloatingActionButton(
-            onClick = {
 
+        SharedFab(
+            mode = FabMode.HOME,
+            onSearch = {
+                navController.navigate("search")
+            },
+            onRefresh = {
                 songs = MusicScanner.getSongs(context)
                     .sortedByDescending { it.id }
+            }
+        )
 
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 120.dp, end = 15.dp),
-
-            containerColor = MaterialTheme.colorScheme.secondary
-        ) {
-
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "Refresh songs"
-            )
-        }
-
-        FloatingActionButton(
-            onClick = {
-                // open search screen
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = 60.dp, end = 15.dp),
-            containerColor = MaterialTheme.colorScheme.primary
-        ) {
-            Icon(
-                imageVector = Icons.Default.Search,
-                contentDescription = "Search"
-            )
-        }
     }
 }

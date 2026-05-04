@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -23,13 +26,18 @@ import com.example.lankiemusicplayer.screens.PlayerScreen
 import com.example.lankiemusicplayer.screens.PlaylistDetailScreen
 import com.example.lankiemusicplayer.screens.PlaylistsScreen
 import com.example.lankiemusicplayer.screens.QueueScreen
+import com.example.lankiemusicplayer.screens.SearchScreen
+import com.example.lankiemusicplayer.screens.SettingsScreen
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
 
 @Composable
-fun AppNavigation() {
+fun AppNavigation(
+    isDarkMode: Boolean,
+    onToggleTheme: (Boolean) -> Unit
+) {
 
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -37,6 +45,7 @@ fun AppNavigation() {
 
     val context = LocalContext.current
     val application = context.applicationContext as android.app.Application
+    var isDarkMode by remember { mutableStateOf(true) }
 
     val hideMiniPlayerRoutes = listOf(
         "player",
@@ -99,6 +108,7 @@ fun AppNavigation() {
                 val scrollToUri = backStackEntry.arguments?.getString("scrollTo")
 
                 AllSongsScreen(
+                    navController = navController,
                     playerViewModel = playerViewModel,
                     scrollToUri = scrollToUri,
                     onOpenPlayer = {
@@ -108,7 +118,10 @@ fun AppNavigation() {
             }
 
             composable("favorites") {
-                FavoritesScreen(playerViewModel = playerViewModel)
+                FavoritesScreen(
+                    navController = navController,
+                    playerViewModel = playerViewModel
+                )
             }
 
             composable("queue") {
@@ -152,6 +165,21 @@ fun AppNavigation() {
                     navController = navController
                 )
             }
+
+            composable("search") {
+                SearchScreen(
+                    navController = navController,
+                    viewModel = playerViewModel
+                )
+            }
+
+            composable("settings") {
+                SettingsScreen(
+                    isDarkMode = isDarkMode,
+                    onToggleTheme = { isDarkMode = it }
+                )
+            }
+
 
 
         }

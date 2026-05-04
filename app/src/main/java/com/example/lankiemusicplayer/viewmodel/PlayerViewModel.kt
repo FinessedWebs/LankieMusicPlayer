@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableFloatStateOf
@@ -18,16 +19,22 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.mutableStateListOf
 import com.example.lankiemusicplayer.data.MusicScanner
 import com.example.lankiemusicplayer.model.Playlist
+import com.example.lankiemusicplayer.model.YouTubeSong
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
 
+
 class PlayerViewModel(application: Application) : AndroidViewModel(application) {
 
 
+    private val _youtubeResults = mutableStateListOf<YouTubeSong>()
+    val youtubeResults: List<YouTubeSong> get() = _youtubeResults
 
+    private val _isYoutubeLoading = mutableStateOf(false)
+    val isYoutubeLoading: State<Boolean> = _isYoutubeLoading
     private val recentlyPlayed = mutableStateListOf<Song>()
 
     private val playCounts = mutableMapOf<String, Int>()
@@ -113,7 +120,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     init {
-
+        loadSongs(application)
         loadLikedSongs()
         loadPlaylists()
 
@@ -670,18 +677,8 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             val songs = mutableListOf<Long>()
 
             for (j in 0 until songsArray.length()) {
-
-                val value = songsArray.get(j)
-
-                when (value) {
-
-                    is Long -> songs.add(value)
-
-                    is String -> {
-                        val id = value.substringAfterLast("/").toLongOrNull()
-                        if (id != null) songs.add(id)
-                    }
-                }
+                val id = songsArray.getLong(j) // ✅ ALWAYS safe
+                songs.add(id)
             }
 
 
@@ -801,6 +798,107 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
     fun getArtistSongs(artist: String): List<Song> {
         return getArtists()[artist] ?: emptyList()
     }
+
+    fun searchYouTube(query: String) {
+
+        if (query.isBlank()) {
+            _youtubeResults.clear()
+            return
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+
+            _isYoutubeLoading.value = true
+
+            try {
+                val apiKey = "AIzaSyCv2keeAq4DGrmH3Z3gJ5ntspwDgbjS3pY"
+
+                val url = """
+                https://www.googleapis.com/youtube/v3/search
+                ?part=snippet
+                &q=${query.replace(" ", "%20")}
+                &type=video
+                &maxResults=10
+                &key=$apiKey
+            """.trimIndent()
+
+                val response = java.net.URL(url).readText()
+                val json = JSONObject(response)
+                val items = json.getJSONArray("items")
+
+                val results = mutableListOf<YouTubeSong>()
+
+                for (i in 0 until items.length()) {
+
+                    val item = items.getJSONObject(i)
+
+                    val videoId = item.getJSONObject("id").getString("videoId")
+                    val snippet = item.getJSONObject("snippet")
+
+                    val title = snippet.getString("title")
+                    val channel = snippet.getString("channelTitle")
+                    val thumbnail = snippet
+                        .getJSONObject("thumbnails")
+                        .getJSONObject("default")
+                        .getString("url")
+
+                    results.add(
+                        YouTubeSong(
+                            title = title,
+                            channel = channel,
+                            videoId = videoId,
+                            thumbnail = thumbnail
+                        )
+                    )
+                }
+
+                withContext(Dispatchers.Main) {
+                    _youtubeResults.clear()
+                    _youtubeResults.addAll(results)
+                }
+
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isYoutubeLoading.value = false
+            }
+
+        }
+
+    }
+
+    fun deletePlaylist(playlistId: Long) {
+        playlists.removeAll { playlist ->
+            playlist.id == playlistId
+        }
+        savePlaylists()
+    }
+
+    fun getArtistSongsAdvanced(artist: String): Pair<List<Song>, List<Song>> {
+
+        val lowerArtist = artist.lowercase()
+
+        val mainSongs = _allSongs.filter {
+            it.artist.equals(artist, ignoreCase = true)
+        }
+
+        val collaborations = _allSongs.filter { song ->
+
+            val titleMatch = song.title.lowercase().contains(lowerArtist)
+
+            val artistMatch = song.artist.equals(artist, ignoreCase = true)
+
+            titleMatch && !artistMatch
+        }
+
+        return mainSongs to collaborations
+    }
+
+
+
+
+
+
 
 }
 

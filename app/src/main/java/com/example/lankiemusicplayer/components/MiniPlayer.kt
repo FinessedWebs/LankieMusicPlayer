@@ -32,36 +32,6 @@ fun MiniPlayer(
 
     val player = viewModel.playerController.getPlayer()
 
-    /*LaunchedEffect(player) {
-        if (player == null) return@LaunchedEffect
-
-        val listener = object : Player.Listener {
-            override fun onMediaItemTransition(
-                mediaItem: androidx.media3.common.MediaItem?,
-                reason: Int
-            ) {
-                val metadata = mediaItem?.mediaMetadata
-                val newTitle = metadata?.displayTitle?.toString()
-                    ?: metadata?.title?.toString()
-                    ?: "Nothing playing"
-                val newArtist = metadata?.artist?.toString() ?: ""
-
-                viewModel.updateMetadata(newTitle, newArtist)
-            }
-        }
-
-        player.addListener(listener)
-
-        val currentItem = player.currentMediaItem
-        if (currentItem != null) {
-            val metadata = currentItem.mediaMetadata
-            viewModel.updateMetadata(
-                metadata.displayTitle?.toString() ?: "Nothing playing",
-                metadata.artist?.toString() ?: ""
-            )
-        }
-    }*/
-
     ElevatedCard(
         onClick = onOpenPlayer,
         modifier = modifier.fillMaxWidth(),

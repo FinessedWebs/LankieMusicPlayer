@@ -8,11 +8,15 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.example.lankiemusicplayer.model.Song
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
+
+enum class DialogState {
+    PLAYLIST,
+    CREATE
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,8 +29,9 @@ fun SongOptionsSheet(
 ) {
 
     val context = LocalContext.current
-    var showPlaylistDialog by remember { mutableStateOf(false) }
+
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var dialogState by remember { mutableStateOf<DialogState?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss
@@ -38,7 +43,6 @@ fun SongOptionsSheet(
                 .padding(16.dp)
         ) {
 
-            // 🔹 TITLE
             Text(
                 text = song.title,
                 style = MaterialTheme.typography.titleMedium
@@ -52,8 +56,6 @@ fun SongOptionsSheet(
 
             Spacer(Modifier.height(16.dp))
 
-            // 🎵 ACTIONS
-
             SheetItem("Play Next", Icons.Default.PlayArrow) {
                 viewModel.playNext(song)
                 onDismiss()
@@ -65,7 +67,7 @@ fun SongOptionsSheet(
             }
 
             SheetItem("Add to Playlist", Icons.Default.PlaylistAdd) {
-                showPlaylistDialog = true
+                dialogState = DialogState.PLAYLIST
             }
 
             Divider()
@@ -119,17 +121,34 @@ fun SongOptionsSheet(
         }
     }
 
-    // 🔹 PLAYLIST DIALOG
-    if (showPlaylistDialog) {
+    // ✅ PLAYLIST DIALOG
+    if (dialogState == DialogState.PLAYLIST) {
 
         val playlists = viewModel.getPlaylists()
 
         AlertDialog(
-            onDismissRequest = { showPlaylistDialog = false },
+            onDismissRequest = { dialogState = null },
             title = { Text("Add to Playlist") },
             text = {
 
                 Column {
+
+                    // 🔥 + NEW PLAYLIST BUTTON
+                    TextButton(
+                        onClick = {
+                            dialogState = DialogState.CREATE
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("New Playlist")
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
                     playlists.forEach { playlist ->
 
                         TextButton(
@@ -146,7 +165,7 @@ fun SongOptionsSheet(
                                     Toast.LENGTH_SHORT
                                 ).show()
 
-                                showPlaylistDialog = false
+                                dialogState = null // ✅ CLOSE
                             }
                         ) {
                             Text(playlist.name)
@@ -155,14 +174,40 @@ fun SongOptionsSheet(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showPlaylistDialog = false }) {
+                TextButton(onClick = { dialogState = null }) {
                     Text("Cancel")
                 }
             }
         )
     }
 
-    // 🔹 DELETE DIALOG
+    // ✅ CREATE PLAYLIST DIALOG (OUTSIDE)
+    if (dialogState == DialogState.CREATE) {
+
+        CreatePlaylistDialog(
+            onCreate = { name ->
+
+                viewModel.createPlaylist(name)
+
+                val newPlaylist = viewModel.getPlaylists().lastOrNull()
+
+                if (newPlaylist != null) {
+                    viewModel.addSongToPlaylist(newPlaylist.id, song)
+                }
+
+                Toast.makeText(
+                    context,
+                    "Playlist created & song added",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                dialogState = null // ✅ CLOSE EVERYTHING
+            },
+            onDismiss = { dialogState = null }
+        )
+    }
+
+    // ✅ DELETE DIALOG
     if (showDeleteDialog) {
 
         AlertDialog(

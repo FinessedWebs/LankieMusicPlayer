@@ -8,6 +8,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.lankiemusicplayer.components.FabMode
+import com.example.lankiemusicplayer.components.SharedFab
 import com.example.lankiemusicplayer.components.SongList
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 
@@ -23,56 +25,68 @@ fun QueueScreen(
     }
     val shuffleEnabled by viewModel.isShuffleEnabled
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
         ) {
 
-            Text(
-                text = "Up Next",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            IconButton(
-                onClick = { viewModel.toggleShuffle() }
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Icon(
-                    imageVector = Icons.Default.Shuffle,
-                    contentDescription = "Shuffle",
-                    tint = if (shuffleEnabled)
-                        MaterialTheme.colorScheme.onSurface
-                    else
-                        MaterialTheme.colorScheme.outline
+
+                Text(
+                    text = "Up Next",
+                    style = MaterialTheme.typography.headlineSmall
                 )
+                IconButton(
+                    onClick = { viewModel.toggleShuffle() }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Shuffle,
+                        contentDescription = "Shuffle",
+                        tint = if (shuffleEnabled)
+                            MaterialTheme.colorScheme.onSurface
+                        else
+                            MaterialTheme.colorScheme.outline
+                    )
+                }
+
+                TextButton(onClick = onBack) {
+                    Text("Close")
+                }
             }
 
-            TextButton(onClick = onBack) {
-                Text("Close")
-            }
+            Spacer(Modifier.height(16.dp))
+
+
+            SongList(
+                songs = queue,
+                viewModel = viewModel,
+                currentPlayingUri = currentUri,
+                enableSwipeToRemove = true,
+                onSongClick = { song ->
+                    viewModel.playSong(song, queue)
+                },
+
+                // ✅ ADD THESE
+                onNavigateToArtist = { /* optional */ },
+                onNavigateToAllSongs = { /* optional */ }
+            )
+
+
         }
 
-        Spacer(Modifier.height(16.dp))
 
-
-        SongList(
-            songs = queue,
-            viewModel = viewModel,
-            currentPlayingUri = currentUri,
-            enableSwipeToRemove = true,
-            onSongClick = { song ->
-                viewModel.playSong(song, queue)
-            },
-
-            // ✅ ADD THESE
-            onNavigateToArtist = { /* optional */ },
-            onNavigateToAllSongs = { /* optional */ }
+        SharedFab(
+            mode = FabMode.SHUFFLE,
+            onShuffle = {
+                viewModel.toggleShuffle()
+            }
         )
-
 
     }
 }
