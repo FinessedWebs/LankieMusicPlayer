@@ -11,11 +11,14 @@ import androidx.compose.ui.unit.dp
 import com.example.lankiemusicplayer.components.FabMode
 import com.example.lankiemusicplayer.components.SharedFab
 import com.example.lankiemusicplayer.components.SongList
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 
 @Composable
 fun QueueScreen(
     viewModel: PlayerViewModel,
+    isDarkMode: Boolean,
+    selectedAccent: ThemeAccent,
     onBack: () -> Unit
 ) {
 
@@ -83,6 +86,8 @@ fun QueueScreen(
 
         SharedFab(
             mode = FabMode.SHUFFLE,
+            isDarkMode = isDarkMode,
+            accent = selectedAccent,
             onShuffle = {
                 viewModel.toggleShuffle()
             }

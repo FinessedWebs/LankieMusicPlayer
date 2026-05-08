@@ -1,93 +1,98 @@
 package com.example.lankiemusicplayer.ui.theme
 
-
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.Typography
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material3.*
 
+private fun getAccent(accent: ThemeAccent, darkTheme: Boolean): Color {
+    return when (accent) {
+        ThemeAccent.Default -> if (darkTheme) Color.White else Color.Black
+        ThemeAccent.Pink -> if (darkTheme) AccentPinkDark else AccentPink
+        ThemeAccent.Orange -> if (darkTheme) AccentOrangeDark else AccentOrange
+        ThemeAccent.Blue -> if (darkTheme) AccentBlueDark else AccentBlue
+        ThemeAccent.Green -> if (darkTheme) AccentGreenDark else AccentGreen
+        ThemeAccent.Purple -> if (darkTheme) AccentPurpleDark else AccentPurple
+    }
+}
 
-private val DarkColors = darkColorScheme(
-    primary = Color.White,
-    onPrimary = Color.Black,
+private fun buildColorScheme(
+    darkTheme: Boolean,
+    accent: ThemeAccent
+): ColorScheme {
 
-    secondary = Color.White,
-    onSecondary = Color.Black,
+    val primaryAccent = getAccent(accent, darkTheme)
 
-    background = Color.Black,
-    onBackground = Color.White,
+    return if (darkTheme) {
+        darkColorScheme(
+            primary = primaryAccent,
+            onPrimary = Color.Black,
 
-    surface = Color.Black,
-    onSurface = Color.White,
+            secondary = primaryAccent,
+            onSecondary = Color.Black,
 
-    primaryContainer = Color(0xFF1A1A1A),
-    onPrimaryContainer = Color.White,
+            background = Color.Black,
+            onBackground = Color.White,
 
-    secondaryContainer = Color(0xFF1A1A1A),
-    onSecondaryContainer = Color.White,
+            surface = Color.Black,
+            onSurface = Color.White,
 
-    surfaceVariant = Color(0xFF2A2A2A),
-    onSurfaceVariant = Color.White,
+            primaryContainer = Color(0xFF1A1A1A),
+            onPrimaryContainer = Color.White,
 
-    outline = Color(0xFF3A3A3A)
-)
+            secondaryContainer = Color(0xFF1A1A1A),
+            onSecondaryContainer = Color.White,
 
-private val LightColors = lightColorScheme(
-    primary = Color.Black,
-    onPrimary = Color.White,
+            surfaceVariant = Color(0xFF2A2A2A),
+            onSurfaceVariant = Color.White,
 
-    secondary = Color.Black,
-    onSecondary = Color.White,
+            outline = Color(0xFF3A3A3A)
+        )
+    } else {
+        lightColorScheme(
+            primary = primaryAccent,
+            onPrimary = Color.White,
 
-    background = Color.White,
-    onBackground = Color.Black,
+            secondary = primaryAccent,
+            onSecondary = Color.White,
 
-    surface = Color.White,
-    onSurface = Color.Black,
+            background = WarmWhite,
+            onBackground = PrimaryText,
 
-    primaryContainer = Color(0xFFF5F5F5),
-    onPrimaryContainer = Color.Black,
+            surface = CardWhite,
+            onSurface = PrimaryText,
 
-    secondaryContainer = Color(0xFFF5F5F5),
-    onSecondaryContainer = Color.Black,
+            primaryContainer = Color(0xFFF5F5F5),
+            onPrimaryContainer = PrimaryText,
 
-    surfaceVariant = Color(0xFFF2F2F2),
-    onSurfaceVariant = Color.Black,
+            secondaryContainer = Color(0xFFF5F5F5),
+            onSecondaryContainer = PrimaryText,
 
-    outline = Color(0xFFE0E0E0)
-)
+            surfaceVariant = Color(0xFFF2F2F2),
+            onSurfaceVariant = PrimaryText,
 
-private val DarkColorScheme = darkColorScheme(
-    primary = AccentSand
-)
+            outline = DividerSoft
+        )
+    }
+}
 
-private val AppTypography = Typography(
-    titleMedium = TextStyle(
-        fontWeight = FontWeight.Bold
-    ),
-    titleLarge = TextStyle(
-        fontWeight = FontWeight.Bold
-    ),
-    headlineSmall = TextStyle(
-        fontWeight = FontWeight.Bold
-    )
-)
+/*private val AppTypography = Typography(
+    titleMedium = TextStyle(fontWeight = FontWeight.Bold),
+    titleLarge = TextStyle(fontWeight = FontWeight.Bold),
+    headlineSmall = TextStyle(fontWeight = FontWeight.Bold)
+)*/
 
 @Composable
 fun LankieMusicPlayerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    accent: ThemeAccent = ThemeAccent.Default,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColors else LightColors
-
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
+        colorScheme = buildColorScheme(darkTheme, accent),
+        typography = Typography,
         content = content
     )
 }

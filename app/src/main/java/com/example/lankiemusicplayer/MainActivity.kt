@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.example.lankiemusicplayer.navigation.AppNavigation
 import com.example.lankiemusicplayer.ui.theme.LankieMusicPlayerTheme
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
 
 class MainActivity : ComponentActivity() {
 
@@ -28,12 +29,37 @@ class MainActivity : ComponentActivity() {
         requestAudioPermission()
 
         setContent {
-
+            val prefs = getSharedPreferences(
+                "lankie_settings",
+                MODE_PRIVATE
+            )
             val systemDark = isSystemInDarkTheme()
 
-            val isDarkMode = remember { mutableStateOf(systemDark) }
+            val savedDarkMode =
+                prefs.getBoolean(
+                    "dark_mode",
+                    systemDark
+                )
+
+            val savedAccent =
+                prefs.getString(
+                    "accent",
+                    ThemeAccent.Default.name
+                ) ?: ThemeAccent.Default.name
+
+            val isDarkMode = remember {
+                mutableStateOf(savedDarkMode)
+            }
+
+            val selectedAccent = remember {
+                mutableStateOf(
+                    ThemeAccent.valueOf(savedAccent)
+                )
+            }
 
             val darkTheme = isDarkMode.value
+
+
 
             SideEffect {
                 window.statusBarColor = if (darkTheme)
@@ -46,14 +72,34 @@ class MainActivity : ComponentActivity() {
             }
 
             LankieMusicPlayerTheme(
-                darkTheme = darkTheme
+                darkTheme = darkTheme,
+                accent = selectedAccent.value
             ) {
                 Surface(
                     color = MaterialTheme.colorScheme.background
                 ) {
                     AppNavigation(
                         isDarkMode = isDarkMode.value,
-                        onToggleTheme = { isDarkMode.value = it }
+                        onToggleTheme = {
+
+                            isDarkMode.value = it
+
+                            prefs.edit()
+                                .putBoolean("dark_mode", it)
+                                .apply()
+                        },
+                        selectedAccent = selectedAccent.value,
+                        onAccentChange = {
+
+                            selectedAccent.value = it
+
+                            prefs.edit()
+                                .putString(
+                                    "accent",
+                                    it.name
+                                )
+                                .apply()
+                        }
                     )
                 }
             }
@@ -61,13 +107,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestAudioPermission() {
-
-        if (ContextCompat.checkSelfPermission(
+        if (
+            ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.READ_MEDIA_AUDIO
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.READ_MEDIA_AUDIO),

@@ -5,19 +5,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import androidx.navigation.compose.*
+import com.example.lankiemusicplayer.screens.CookingTimeScreen
 import com.example.lankiemusicplayer.components.MiniPlayer
 import com.example.lankiemusicplayer.screens.AllSongsScreen
+import com.example.lankiemusicplayer.screens.AppSleepScreen
 import com.example.lankiemusicplayer.screens.ArtistDetailScreen
 import com.example.lankiemusicplayer.screens.ArtistsScreen
 import com.example.lankiemusicplayer.screens.FavoritesScreen
@@ -28,15 +27,17 @@ import com.example.lankiemusicplayer.screens.PlaylistsScreen
 import com.example.lankiemusicplayer.screens.QueueScreen
 import com.example.lankiemusicplayer.screens.SearchScreen
 import com.example.lankiemusicplayer.screens.SettingsScreen
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-
 @Composable
 fun AppNavigation(
     isDarkMode: Boolean,
-    onToggleTheme: (Boolean) -> Unit
+    onToggleTheme: (Boolean) -> Unit,
+    selectedAccent: ThemeAccent,
+    onAccentChange: (ThemeAccent) -> Unit
 ) {
 
     val navController = rememberNavController()
@@ -45,16 +46,16 @@ fun AppNavigation(
 
     val context = LocalContext.current
     val application = context.applicationContext as android.app.Application
-    var isDarkMode by remember { mutableStateOf(true) }
 
     val hideMiniPlayerRoutes = listOf(
         "player",
-        "PlayerScreen"
+        "PlayerScreen",
+        "sleep"
     )
 
-    // Shared ViewModel for the whole app
     val playerViewModel: PlayerViewModel = viewModel(
-        factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory(application)
+        factory = androidx.lifecycle.ViewModelProvider
+            .AndroidViewModelFactory(application)
     )
 
     Box(
@@ -70,6 +71,8 @@ fun AppNavigation(
                 HomeScreen(
                     navController = navController,
                     playerViewModel = playerViewModel,
+                    isDarkMode = isDarkMode,
+                    selectedAccent = selectedAccent,
                     onOpenPlayer = {
                         navController.navigate("player")
                     }
@@ -89,7 +92,10 @@ fun AppNavigation(
                         navController.navigate("artist_detail/$artist")
                     },
                     onNavigateToAllSongs = { uri ->
-                        val encoded = URLEncoder.encode(uri, StandardCharsets.UTF_8.toString())
+                        val encoded = URLEncoder.encode(
+                            uri,
+                            StandardCharsets.UTF_8.toString()
+                        )
                         navController.navigate("allsongs?scrollTo=$encoded")
                     }
                 )
@@ -111,6 +117,7 @@ fun AppNavigation(
                     navController = navController,
                     playerViewModel = playerViewModel,
                     scrollToUri = scrollToUri,
+                    selectedAccent = selectedAccent,
                     onOpenPlayer = {
                         navController.navigate("player")
                     }
@@ -120,6 +127,8 @@ fun AppNavigation(
             composable("favorites") {
                 FavoritesScreen(
                     navController = navController,
+                    selectedAccent = selectedAccent,
+                    isDarkMode = isDarkMode,
                     playerViewModel = playerViewModel
                 )
             }
@@ -127,6 +136,8 @@ fun AppNavigation(
             composable("queue") {
                 QueueScreen(
                     viewModel = playerViewModel,
+                    selectedAccent = selectedAccent,
+                    isDarkMode = isDarkMode,
                     onBack = { navController.popBackStack() }
                 )
             }
@@ -134,12 +145,15 @@ fun AppNavigation(
             composable("playlists") {
                 PlaylistsScreen(
                     navController = navController,
+                    selectedAccent = selectedAccent,
+                    isDarkMode = isDarkMode,
                     viewModel = playerViewModel
                 )
             }
 
             composable("playlist_detail/{id}") {
-                val id = it.arguments?.getString("id")?.toLongOrNull() ?: return@composable
+                val id = it.arguments?.getString("id")?.toLongOrNull()
+                    ?: return@composable
 
                 PlaylistDetailScreen(
                     playlistId = id,
@@ -156,12 +170,14 @@ fun AppNavigation(
             }
 
             composable("artist_detail/{artistName}") {
-
-                val artistName = it.arguments?.getString("artistName") ?: return@composable
+                val artistName = it.arguments?.getString("artistName")
+                    ?: return@composable
 
                 ArtistDetailScreen(
                     artistName = artistName,
                     viewModel = playerViewModel,
+                    selectedAccent = selectedAccent,
+                    isDarkMode = isDarkMode,
                     navController = navController
                 )
             }
@@ -173,18 +189,33 @@ fun AppNavigation(
                 )
             }
 
-            composable("settings") {
-                SettingsScreen(
-                    isDarkMode = isDarkMode,
-                    onToggleTheme = { isDarkMode = it }
+            composable("sleep") {
+                AppSleepScreen(
+                    navController = navController,
+                    selectedAccent = selectedAccent,
+                    playerViewModel = playerViewModel
                 )
             }
 
+            composable("cooking_time") {
+                CookingTimeScreen(
+                    playerViewModel = playerViewModel,
+                    onOpenPlayer = {
+                        navController.navigate("player")
+                    }
+                )
+            }
 
-
+            composable("settings") {
+                SettingsScreen(
+                    isDarkMode = isDarkMode,
+                    onToggleTheme = onToggleTheme,
+                    selectedAccent = selectedAccent,
+                    onAccentChange = onAccentChange
+                )
+            }
         }
 
-        // 🔥 GLOBAL MINIPLAYER (ONLY ONE IN APP)
         if (currentRoute !in hideMiniPlayerRoutes) {
             MiniPlayer(
                 onOpenPlayer = { navController.navigate("player") },

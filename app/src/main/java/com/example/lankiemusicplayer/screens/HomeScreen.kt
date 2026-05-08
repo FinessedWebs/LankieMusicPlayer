@@ -1,43 +1,27 @@
 package com.example.lankiemusicplayer.screens
 
 import android.util.Log
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.lankiemusicplayer.components.AllSongsButton
+import com.example.lankiemusicplayer.components.AppScaffold
+import com.example.lankiemusicplayer.components.FabMode
 import com.example.lankiemusicplayer.components.FavoritePlaylistCards
-import com.example.lankiemusicplayer.components.MiniPlayer
 import com.example.lankiemusicplayer.components.MusicTabs
+import com.example.lankiemusicplayer.components.SharedFab
 import com.example.lankiemusicplayer.components.SongList
 import com.example.lankiemusicplayer.data.MusicScanner
 import com.example.lankiemusicplayer.model.Song
+import com.example.lankiemusicplayer.navigation.rememberNavigationActions
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import androidx.navigation.NavController
-import com.example.lankiemusicplayer.components.AllSongsButton
-import androidx.compose.material.icons.filled.Refresh
-import com.example.lankiemusicplayer.components.FabMode
-import com.example.lankiemusicplayer.components.SharedFab
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -45,16 +29,25 @@ import java.nio.charset.StandardCharsets
 fun HomeScreen(
     navController: NavHostController,
     playerViewModel: PlayerViewModel,
+    isDarkMode: Boolean,
+    selectedAccent: ThemeAccent,
     onOpenPlayer: () -> Unit
 ) {
-    val player by playerViewModel.playerController.controller
+
     val context = LocalContext.current
-    var songs by remember { mutableStateOf<List<Song>>(emptyList()) }
-    var selectedTab by remember { mutableStateOf(0) }
 
+    var songs by remember {
+        mutableStateOf<List<Song>>(emptyList())
+    }
 
+    var selectedTab by remember {
+        mutableIntStateOf(0)
+    }
+
+    val navActions = rememberNavigationActions(navController)
 
     LaunchedEffect(songs.isEmpty()) {
+
         if (songs.isEmpty()) {
 
             val loadedSongs = withContext(Dispatchers.IO) {
@@ -63,14 +56,51 @@ fun HomeScreen(
 
             songs = loadedSongs
 
-            Log.d("LankieMusic", "Total songs found: ${songs.size}")
+            Log.d(
+                "LankieMusic",
+                "Total songs found: ${songs.size}"
+            )
         }
     }
 
+    AppScaffold(
+        title = "Lankie",
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
+        onHomeClick = navActions::goHome,
+
+        onSearchClick = navActions::goSearch,
+
+        onCookingTimeClick = {
+            navController.navigate("cooking_time")
+        },
+
+        onSleepClick = {
+            navController.navigate("sleep")
+        },
+
+        onSettingsClick = {
+            navController.navigate("settings")
+        },
+
+        floatingActionButton = {
+
+            SharedFab(
+                mode = FabMode.HOME,
+                accent = selectedAccent,
+                isDarkMode = isDarkMode,
+
+                onSearch = {
+                    navController.navigate("search")
+                },
+
+                onRefresh = {
+
+                    songs = MusicScanner
+                        .getSongs(context)
+                        .sortedByDescending { it.id }
+                }
+            )
+        }
 
     ) {
 
@@ -80,112 +110,127 @@ fun HomeScreen(
                 .padding(16.dp)
         ) {
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            FavoritePlaylistCards(
+                favoriteCount =
+                    playerViewModel.getFavorites(songs).size,
 
-                FavoritePlaylistCards(
-                    favoriteCount = playerViewModel.getFavorites(songs).size,
-                    playlistCount = playerViewModel.getPlaylists().size,
-                    onFavoritesClick = {
-                        navController.navigate("favorites")
-                    },
-                    onPlaylistsClick = {
-                        navController.navigate("playlists")
-                    }
-                )
+                playlistCount =
+                    playerViewModel.getPlaylists().size,
 
-                Spacer(Modifier.height(16.dp))
+                onFavoritesClick = {
+                    navController.navigate("favorites")
+                },
 
-                AllSongsButton(
-                    onClick = {
-                        navController.navigate("allsongs")
-                    }
-                )
+                onPlaylistsClick = {
+                    navController.navigate("playlists")
+                }
+            )
 
-                Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-                MusicTabs(
-                    onTabSelected = { tab ->
-                        selectedTab = tab
+            AllSongsButton(
+                onClick = {
+                    navController.navigate("allsongs")
+                }
+            )
 
-                        when (tab) {
+            Spacer(Modifier.height(16.dp))
 
-                            0 -> {
-                                songs = MusicScanner
-                                    .getSongs(context)
-                                    .sortedByDescending { it.id }
-                            }
+            MusicTabs(
+                onTabSelected = { tab ->
 
-                            1 -> {
-                                songs = playerViewModel.getRecentlyPlayed()
-                            }
+                    selectedTab = tab
 
-                            2 -> {
-                                songs = playerViewModel
-                                    .getMostPlayed()
-                                    .map { it.first }
-                            }
+                    when (tab) {
+
+                        0 -> {
+
+                            songs = MusicScanner
+                                .getSongs(context)
+                                .sortedByDescending { it.id }
+                        }
+
+                        1 -> {
+
+                            songs =
+                                playerViewModel.getRecentlyPlayed()
+                        }
+
+                        2 -> {
+
+                            songs = playerViewModel
+                                .getMostPlayed()
+                                .map { it.first }
                         }
                     }
-                )
+                }
+            )
 
-                Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(12.dp))
 
+            val mostPlayed =
+                playerViewModel.getMostPlayed()
 
+            val currentUri by
+            playerViewModel.currentSongUri
 
-                val mostPlayed = playerViewModel.getMostPlayed()
+            SongList(
+                songs = songs,
 
-                val currentUri by playerViewModel.currentSongUri
+                viewModel = playerViewModel,
 
-                SongList(
-                    songs = songs,
-                    viewModel = playerViewModel,
-                    currentPlayingUri = currentUri,
-                    showMenu = selectedTab == 0,
-                    enableSwipeToPlaylist = selectedTab != 0,
-                    trailingText = { song, index ->
+                currentPlayingUri = currentUri,
 
-                        when (selectedTab) {
+                showMenu = selectedTab == 0,
 
-                            1 -> "${index + 1}"
+                enableSwipeToPlaylist =
+                    selectedTab != 0,
 
-                            2 -> mostPlayed
-                                .find { it.first.uri == song.uri }
-                                ?.second
-                                ?.toString()
+                trailingText = { song, index ->
 
-                            else -> null
-                        }
-                    },
-                    onSongClick = { song ->
-                        playerViewModel.playSong(song, songs)
-                    },
+                    when (selectedTab) {
 
-                    // ✅ ADD THESE (IMPORTANT)
-                    onNavigateToArtist = { artist ->
-                        navController.navigate("artist_detail/$artist")
-                    },
-                    onNavigateToAllSongs = { song ->
-                        val encoded = URLEncoder.encode(song.uri.toString(), StandardCharsets.UTF_8.toString())
-                        navController.navigate("allsongs?scrollTo=$encoded")
+                        1 -> "${index + 1}"
+
+                        2 -> mostPlayed
+                            .find {
+                                it.first.uri == song.uri
+                            }
+                            ?.second
+                            ?.toString()
+
+                        else -> null
                     }
-                )
+                },
 
-            }
+                onSongClick = { song ->
+
+                    playerViewModel.playSong(
+                        song,
+                        songs
+                    )
+                },
+
+                onNavigateToArtist = { artist ->
+
+                    navController.navigate(
+                        "artist_detail/$artist"
+                    )
+                },
+
+                onNavigateToAllSongs = { song ->
+
+                    val encoded =
+                        URLEncoder.encode(
+                            song.uri.toString(),
+                            StandardCharsets.UTF_8.toString()
+                        )
+
+                    navController.navigate(
+                        "allsongs?scrollTo=$encoded"
+                    )
+                }
+            )
         }
-
-
-        SharedFab(
-            mode = FabMode.HOME,
-            onSearch = {
-                navController.navigate("search")
-            },
-            onRefresh = {
-                songs = MusicScanner.getSongs(context)
-                    .sortedByDescending { it.id }
-            }
-        )
-
     }
 }

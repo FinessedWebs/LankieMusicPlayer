@@ -1,31 +1,20 @@
 package com.example.lankiemusicplayer.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Slider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.lankiemusicplayer.components.MiniPlayer
-import com.example.lankiemusicplayer.components.SongList
-import com.example.lankiemusicplayer.data.MusicScanner
-import com.example.lankiemusicplayer.model.Song
-import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import androidx.compose.material.icons.filled.Shuffle
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.navigation.NavController
 import com.example.lankiemusicplayer.components.AppScaffold
 import com.example.lankiemusicplayer.components.FabMode
 import com.example.lankiemusicplayer.components.SharedFab
+import com.example.lankiemusicplayer.components.SongList
 import com.example.lankiemusicplayer.navigation.rememberNavigationActions
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
+import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
@@ -35,14 +24,23 @@ fun AllSongsScreen(
     navController: NavController,
     playerViewModel: PlayerViewModel,
     scrollToUri: String? = null,
+    selectedAccent: ThemeAccent,
     onOpenPlayer: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
+
     val decodedUri = scrollToUri?.let {
         URLDecoder.decode(it, StandardCharsets.UTF_8.toString())
     }
 
-    val songs by remember { derivedStateOf { playerViewModel.allSongs } }
+    val songs by remember {
+        derivedStateOf {
+            playerViewModel.allSongs.sortedBy {
+                it.title.trim().lowercase()
+            }
+        }
+    }
+
     val listState = rememberLazyListState()
     val currentUri by playerViewModel.currentSongUri
     val navActions = rememberNavigationActions(navController)
@@ -51,20 +49,31 @@ fun AllSongsScreen(
         title = "All Songs",
 
         onHomeClick = navActions::goHome,
+
         onSearchClick = navActions::goSearch,
+
+        onCookingTimeClick = {
+            navController.navigate("cooking_time")
+        },
+
         onSettingsClick = {
             navController.navigate("settings")
         },
 
-        floatingActionButton = {
+        onSleepClick = {
+            navController.navigate("sleep")
+        },
+
+        /*floatingActionButton = {
             SharedFab(
                 mode = FabMode.SHUFFLE,
                 listState = listState,
+                accent = selectedAccent,
                 onShuffle = {
                     playerViewModel.playShuffled(songs)
                 }
             )
-        }
+        }*/
 
     ) {
 
@@ -72,7 +81,6 @@ fun AllSongsScreen(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            // 🔹 Auto scroll to song
             LaunchedEffect(decodedUri, songs) {
                 if (decodedUri != null && songs.isNotEmpty()) {
 
@@ -106,17 +114,16 @@ fun AllSongsScreen(
                 onNavigateToAllSongs = {}
             )
 
-            // 🔹 Vertical fast scroll
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
                     .width(24.dp)
-                    .align(Alignment.CenterEnd)
+                    .align(Alignment.TopEnd)
             ) {
 
                 val totalItems = songs.size
 
-                if (totalItems > 0) {
+                if (totalItems > 15) {
 
                     var sliderPosition by remember { mutableFloatStateOf(0f) }
 
@@ -138,6 +145,9 @@ fun AllSongsScreen(
                         valueRange = 0f..(totalItems - 1).toFloat(),
                         modifier = Modifier.fillMaxHeight()
                     )
+
+
+
                 }
             }
         }

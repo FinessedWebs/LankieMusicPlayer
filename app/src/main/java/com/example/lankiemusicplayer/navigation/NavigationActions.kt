@@ -11,6 +11,10 @@ class NavigationActions(
         navController.popBackStack("home", false)
     }
 
+    fun goSleep() {
+        navController.navigate("sleep")
+    }
+
     fun goSearch() {
         navController.navigate("search")
     }
@@ -25,6 +29,10 @@ class NavigationActions(
 
     fun goArtistDetail(name: String) {
         navController.navigate("artist_detail/$name")
+    }
+
+    fun goCookingTime() {
+        navController.navigate("cooking_time")
     }
 }
 

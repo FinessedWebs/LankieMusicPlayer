@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateListOf
 import com.example.lankiemusicplayer.data.MusicScanner
 import com.example.lankiemusicplayer.model.Playlist
 import com.example.lankiemusicplayer.model.YouTubeSong
+import com.example.lankiemusicplayer.player.SleepTimerManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
@@ -152,15 +153,29 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
                     val newArtist = metadata?.artist?.toString() ?: ""
 
-                    // 🔥 MOVE THIS HERE
+                    // 🔥 Update metadata
                     updateMetadata(newTitle, newArtist)
 
                     val index = currentPlaylist.indexOfFirst { it.uri == uri }
 
                     if (index != -1) {
+
                         currentIndex = index
+
                         val song = currentPlaylist[index]
+
                         registerPlay(song)
+                    }
+
+                    // 🔥 SONG SLEEP TIMER SUPPORT
+                    if (
+                        reason ==
+                        androidx.media3.common.Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
+                    ) {
+
+                        SleepTimerManager.onSongCompleted(
+                            playerController.getPlayer()
+                        )
                     }
                 }
             })
@@ -202,7 +217,7 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
             }
 
             // ✅ SAVE STATE HERE WHEN NEEDED (every 2000ms)
-            if (_isPlaying.value) {
+            if (_currentSongUri.value != null) {
                 savePlaybackState()
             }
 
@@ -713,18 +728,34 @@ class PlayerViewModel(application: Application) : AndroidViewModel(application) 
 
         val song = _allSongs.find { it.uri.toString() == uri } ?: return
 
-        playSong(song, _allSongs)
+        restoreSong(song, position, shouldPlay)
+    }
 
+    private fun restoreSong(song: Song, position: Long, shouldPlay: Boolean) {
         val player = playerController.getPlayer() ?: return
 
-        player.seekTo(position)
+        // restore shared UI state immediately
+        _currentSongUri.value = song.uri.toString()
+        _currentTitle.value = song.title
+        _currentArtist.value = song.artist
 
-        if (!shouldPlay) {
+        // rebuild queue without treating it like a fresh "play"
+        currentPlaylist = _allSongs
+        originalPlaylist = _allSongs
+        currentIndex = _allSongs.indexOfFirst { it.uri == song.uri }.coerceAtLeast(0)
+
+        val mediaItems = currentPlaylist.map {
+            playerController.createMediaItem(it)
+        }
+
+        player.setMediaItems(mediaItems, currentIndex, position)
+        player.prepare()
+
+        if (shouldPlay) {
+            player.play()
+        } else {
             player.pause()
         }
-        /*if (!shouldPlay) {
-            playerController.getPlayer()?.pause()
-        }*/
     }
 
     fun removeFromQueue(song: Song) {

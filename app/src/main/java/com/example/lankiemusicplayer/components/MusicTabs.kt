@@ -1,6 +1,7 @@
 package com.example.lankiemusicplayer.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -31,6 +32,8 @@ fun MusicTabs(
                         selectedTab = index
                         onTabSelected(index)
                     },
+                    selectedContentColor = MaterialTheme.colorScheme.primary,
+                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                     text = { Text(title) }
                 )
             }

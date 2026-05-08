@@ -10,6 +10,7 @@ import com.example.lankiemusicplayer.components.FabMode
 import com.example.lankiemusicplayer.components.SharedFab
 import com.example.lankiemusicplayer.components.SongList
 import com.example.lankiemusicplayer.model.Song
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 
 // 🔥 helper model
@@ -22,7 +23,9 @@ sealed class ArtistListItem {
 @Composable
 fun ArtistDetailScreen(
     artistName: String,
+    isDarkMode: Boolean,
     viewModel: PlayerViewModel,
+    selectedAccent: ThemeAccent,
     navController: NavController
 ) {
 
@@ -105,7 +108,9 @@ fun ArtistDetailScreen(
 
         SharedFab(
             mode = FabMode.SHUFFLE,
+            isDarkMode = isDarkMode,
             listState = listState,
+            accent = selectedAccent,
             onShuffle = {
                 val all = mainSongs + collaborations
                 viewModel.playShuffled(all)

@@ -1,12 +1,10 @@
 package com.example.lankiemusicplayer.screens
 
-import android.R.attr.padding
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
@@ -16,62 +14,72 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.lankiemusicplayer.components.AppScaffold
 import com.example.lankiemusicplayer.components.CreatePlaylistDialog
-import com.example.lankiemusicplayer.model.Playlist
-import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
-import com.example.lankiemusicplayer.components.SharedFab
 import com.example.lankiemusicplayer.components.FabMode
+import com.example.lankiemusicplayer.components.SharedFab
+import com.example.lankiemusicplayer.model.Playlist
 import com.example.lankiemusicplayer.navigation.rememberNavigationActions
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
+import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlaylistsScreen(
     navController: NavController,
+    selectedAccent: ThemeAccent,
+    isDarkMode: Boolean,
     viewModel: PlayerViewModel
 ) {
 
     val playlists = viewModel.getPlaylists()
 
     var showDialog by remember { mutableStateOf(false) }
-
     var selectedPlaylist by remember { mutableStateOf<Playlist?>(null) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+
     val navActions = rememberNavigationActions(navController)
 
     AppScaffold(
         title = "Playlists",
 
         onHomeClick = navActions::goHome,
+
         onSearchClick = navActions::goSearch,
+
+        onCookingTimeClick = {
+            navController.navigate("cooking_time")
+        },
+
         onSettingsClick = {
             navController.navigate("settings")
         },
 
-        // ✅ THIS is the key part
+        onSleepClick = {
+            navController.navigate("sleep")
+        },
+
         floatingActionButton = {
             SharedFab(
                 mode = FabMode.HOME,
+                accent = selectedAccent,
+                isDarkMode = isDarkMode,
 
                 onSearch = {
                     navController.navigate("search")
                 },
 
                 onRefresh = {
-                    // optional: reload playlists if needed
+                    // optional refresh
                 }
             )
         }
 
     ) {
 
-        // 🔥 THIS replaces Scaffold content
-
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
+            modifier = Modifier.fillMaxSize()
         ) {
 
             item {
-
                 ElevatedCard(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -80,19 +88,20 @@ fun PlaylistsScreen(
                         navController.navigate("artists")
                     }
                 ) {
-
                     Row(
                         modifier = Modifier.padding(16.dp)
                     ) {
 
-                        Icon(Icons.Default.Person, contentDescription = null)
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null
+                        )
 
                         Spacer(Modifier.width(16.dp))
 
                         Column {
-
                             Text(
-                                "Artists",
+                                text = "Artists",
                                 style = MaterialTheme.typography.titleMedium
                             )
 
@@ -122,14 +131,16 @@ fun PlaylistsScreen(
                         modifier = Modifier.padding(16.dp)
                     ) {
 
-                        Icon(Icons.Default.Folder, contentDescription = null)
+                        Icon(
+                            imageVector = Icons.Default.Folder,
+                            contentDescription = null
+                        )
 
                         Spacer(Modifier.width(16.dp))
 
                         Column {
-
                             Text(
-                                playlist.name,
+                                text = playlist.name,
                                 style = MaterialTheme.typography.titleMedium
                             )
 
@@ -141,7 +152,6 @@ fun PlaylistsScreen(
         }
     }
 
-    // 🔹 CREATE PLAYLIST
     if (showDialog) {
         CreatePlaylistDialog(
             onCreate = {
@@ -152,7 +162,6 @@ fun PlaylistsScreen(
         )
     }
 
-    // 🔹 ACTION DIALOG
     selectedPlaylist?.let { playlist ->
 
         AlertDialog(
@@ -177,7 +186,7 @@ fun PlaylistsScreen(
                         }
                     ) {
                         Text(
-                            "Delete Playlist",
+                            text = "Delete Playlist",
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -185,14 +194,15 @@ fun PlaylistsScreen(
             },
 
             confirmButton = {
-                TextButton(onClick = { selectedPlaylist = null }) {
+                TextButton(
+                    onClick = { selectedPlaylist = null }
+                ) {
                     Text("Close")
                 }
             }
         )
     }
 
-    // 🔹 DELETE CONFIRM
     if (showDeleteConfirm && selectedPlaylist != null) {
 
         AlertDialog(
@@ -200,7 +210,9 @@ fun PlaylistsScreen(
                 showDeleteConfirm = false
                 selectedPlaylist = null
             },
+
             title = { Text("Delete Playlist") },
+
             text = {
                 Text("Are you sure you want to delete \"${selectedPlaylist!!.name}\"?")
             },

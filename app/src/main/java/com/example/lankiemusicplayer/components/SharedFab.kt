@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.lankiemusicplayer.R
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
+
 
 enum class FabMode {
     HOME,
@@ -37,6 +39,9 @@ private val MiniPlayerHeight = 90.dp
 @Composable
 fun SharedFab(
     mode: FabMode,
+    accent: ThemeAccent,
+    isDarkMode: Boolean,
+
     listState: LazyListState? = null,
     onShuffle: (() -> Unit)? = null,
     onSearch: (() -> Unit)? = null,
@@ -57,6 +62,12 @@ fun SharedFab(
     }
 
     val alpha = if (fabVisible || expanded) 1f else 0.3f
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
+    val logoRes = accentLogo(
+        accent = accent,
+        isDarkMode = isDarkMode
+    )
 
     Box(
         modifier = Modifier
@@ -89,7 +100,7 @@ fun SharedFab(
                                     alignment = Alignment.BottomEnd
                                 ),
 
-                            containerColor = { Color.White }
+                            containerColor = { primaryColor }
 
                         ) {
 
@@ -97,11 +108,11 @@ fun SharedFab(
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "Close",
-                                    tint = Color.Black
+                                    tint = onPrimaryColor
                                 )
                             } else {
                                 Icon(
-                                    painter = painterResource(R.drawable.lankie_l),
+                                    painter = painterResource(logoRes),
                                     contentDescription = "Menu",
                                     tint = Color.Unspecified
                                 )
@@ -116,8 +127,8 @@ fun SharedFab(
                             expanded = false
                             onSearch?.invoke()
                         },
-                        containerColor = Color.White,
-                        contentColor = Color.Black,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                         icon = {
                             Icon(Icons.Default.Search, contentDescription = null)
                         },
@@ -130,8 +141,8 @@ fun SharedFab(
                             expanded = false
                             onRefresh?.invoke()
                         },
-                        containerColor = Color.White,
-                        contentColor = Color.Black,
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
                         icon = {
                             Icon(Icons.Default.Refresh, contentDescription = null)
                         },
@@ -160,6 +171,56 @@ fun SharedFab(
                     )
                 }
             }
+        }
+    }
+}
+private fun accentLogo(
+    accent: ThemeAccent,
+    isDarkMode: Boolean
+): Int {
+
+    return when (accent) {
+
+        ThemeAccent.Default -> {
+            if (isDarkMode)
+                R.drawable.lankie_l_dark
+            else
+                R.drawable.lankie_l
+        }
+
+        ThemeAccent.Pink -> {
+            if (isDarkMode)
+                R.drawable.lankie_pink_dark
+            else
+                R.drawable.lankie_pink
+        }
+
+        ThemeAccent.Orange -> {
+            if (isDarkMode)
+                R.drawable.lankie_orange_dark
+            else
+                R.drawable.lankie_orange
+        }
+
+        ThemeAccent.Blue -> {
+            if (isDarkMode)
+                R.drawable.lankie_blue_dark
+            else
+                R.drawable.lankie_blue
+        }
+
+        ThemeAccent.Green -> {
+            if (isDarkMode)
+                R.drawable.lankie_green_dark
+            else
+                R.drawable.lankie_green
+        }
+
+        ThemeAccent.Purple -> {
+            if (isDarkMode)
+                R.drawable.lankie_purple_dark
+            else
+                R.drawable.lankie_purple
         }
     }
 }

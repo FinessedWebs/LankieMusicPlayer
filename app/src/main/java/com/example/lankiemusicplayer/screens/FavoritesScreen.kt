@@ -1,7 +1,8 @@
 package com.example.lankiemusicplayer.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -14,6 +15,7 @@ import com.example.lankiemusicplayer.components.SongList
 import com.example.lankiemusicplayer.data.MusicScanner
 import com.example.lankiemusicplayer.model.Song
 import com.example.lankiemusicplayer.navigation.rememberNavigationActions
+import com.example.lankiemusicplayer.ui.theme.ThemeAccent
 import com.example.lankiemusicplayer.viewmodel.PlayerViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,6 +23,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun FavoritesScreen(
     navController: NavController,
+    selectedAccent: ThemeAccent,
+    isDarkMode: Boolean,
     playerViewModel: PlayerViewModel
 ) {
 
@@ -42,14 +46,26 @@ fun FavoritesScreen(
         title = "Favorites",
 
         onHomeClick = navActions::goHome,
+
         onSearchClick = navActions::goSearch,
+
+        onCookingTimeClick = {
+            navController.navigate("cooking_time")
+        },
+
         onSettingsClick = {
             navController.navigate("settings")
+        },
+
+        onSleepClick = {
+            navController.navigate("sleep")
         },
 
         floatingActionButton = {
             SharedFab(
                 mode = FabMode.SHUFFLE,
+                isDarkMode = isDarkMode,
+                accent = selectedAccent,
                 onShuffle = {
                     playerViewModel.playShuffled(favorites)
                 }

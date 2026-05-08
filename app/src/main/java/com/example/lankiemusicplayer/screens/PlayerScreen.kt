@@ -147,7 +147,8 @@ fun PlayerScreen(
                 ),
 
                 colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor =
+                        MaterialTheme.colorScheme.surfaceVariant
                 )
             )  {
 
@@ -231,7 +232,7 @@ fun PlayerScreen(
                     Icon(
                         imageVector = Icons.Filled.Favorite,
                         contentDescription = "Unlike",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.primary
                     )
 
                 } else {
@@ -353,7 +354,10 @@ fun PlayerScreen(
                 Icon(
                     imageVector = Icons.Default.Shuffle,
                     contentDescription = "Shuffle",
-                    tint = if (isShuffleOn) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outline
+                    tint = if (isShuffleOn)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.outline
                 )
             }
 
@@ -365,7 +369,7 @@ fun PlayerScreen(
                 Icon(
                     imageVector = Icons.Default.SkipPrevious,
                     contentDescription = "Previous",
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -376,7 +380,7 @@ fun PlayerScreen(
                 modifier = Modifier.size(82.dp),
                 shape = CircleShape,
                 colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
 
@@ -384,7 +388,7 @@ fun PlayerScreen(
                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     contentDescription = if (isPlaying) "Pause" else "Play",
                     modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.surface
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
 
@@ -396,7 +400,7 @@ fun PlayerScreen(
                 Icon(
                     imageVector = Icons.Default.SkipNext,
                     contentDescription = "Next",
-                    tint = MaterialTheme.colorScheme.onSurface,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -413,7 +417,7 @@ fun PlayerScreen(
                         Icons.Default.Repeat,
                     contentDescription = "Repeat",
                     tint = if (repeatMode != RepeatMode.OFF)
-                        MaterialTheme.colorScheme.onSurface
+                        MaterialTheme.colorScheme.primary
                     else
                         MaterialTheme.colorScheme.outline
                 )
